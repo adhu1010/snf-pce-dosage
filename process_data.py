@@ -89,12 +89,15 @@ def process_data():
                     # Identify saturation point
                     if not subset.empty:
                         min_flow = subset['flow_time'].min()
+                        # Reverted tolerance to 0.5s as per user request
                         tolerance = 0.5
                         candidates = subset[subset['flow_time'] <= min_flow + tolerance]
                         saturation_point = candidates.iloc[0]
                         
                         optimal_dosage = saturation_point['dosage']
                         sat_flow = saturation_point['flow_time']
+                        
+                        print(f"   Found saturation for {sp_type} W/C {wc_ratio} ({sf_pct}% SF): {optimal_dosage:.3f}% (Flow: {sat_flow}s)")
                         
                         saturation_points.append({
                             'sp_type': sp_type,

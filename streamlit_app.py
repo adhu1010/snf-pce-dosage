@@ -73,6 +73,15 @@ if models_loaded:
             format="%.1f",
             help="Percentage of Silica Fume replacement (e.g., 0, 5, 10, 15)"
         )
+        sf_cg = st.number_input(
+            "Cement Grade",
+            min_value=0.0,
+            max_value=100.0,
+            value=53.0,
+            step=1.0,
+            format="%.1f",
+            help="Cement Grade Value (e.g., 53)"
+        )
         
         # Predict button
         if st.button("🔮 Predict Optimal Dosage", type="primary"):
@@ -192,7 +201,8 @@ if models_loaded:
             
             # Add saturation point marker
             sat_point = saturation_df[(saturation_df['sp_type'] == selected_sp) & 
-                                     (saturation_df['wc_ratio'] == wc)]
+                                     (saturation_df['wc_ratio'] == wc) &
+                                     (saturation_df['silica_fume'] == selected_sf_flow)]
             if not sat_point.empty:
                 fig.add_trace(go.Scatter(
                     x=[sat_point['optimal_dosage'].values[0]],
