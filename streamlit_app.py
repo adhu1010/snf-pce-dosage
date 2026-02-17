@@ -137,65 +137,42 @@ if models_loaded:
                 """)
             
             # Show comparison with training data
-            st.markdown("### 📈 Comparison with Training Data")
+            st.markdown("### 📈 Predicted vs Actual (Exact Match)")
             
-            # Filter by SP Type first
-            actual_data = saturation_df[saturation_df['sp_type'] == sp].copy()
+            # Find exact match in saturation points data
+            match = saturation_df[
+                (saturation_df['sp_type'] == sp) & 
+                (np.isclose(saturation_df['wc_ratio'], wc)) & 
+                (np.isclose(saturation_df['silica_fume'], sf))
+            ]
             
-            # Filter by Silica Fume (exact match or closest)
-            if not actual_data.empty:
-                # Try to find exact match for Silica Fume
-                sf_match = actual_data[actual_data['silica_fume'] == sf]
-                if not sf_match.empty:
-                    comparison_pool = sf_match
-                else:
-                    # If no exact SF match, find closest SF
-                    actual_data['sf_diff'] = abs(actual_data['silica_fume'] - sf)
-                    closest_sf = actual_data['sf_diff'].min()
-                    comparison_pool = actual_data[actual_data['sf_diff'] == closest_sf]
+            if not match.empty:
+                actual_dosage = match.iloc[0]['optimal_dosage']
                 
-                # Now find closest W/C ratios from the filtered pool
-                comparison_pool = comparison_pool.copy()
-                comparison_pool['wc_diff'] = abs(comparison_pool['wc_ratio'] - wc)
-                closest = comparison_pool.nsmallest(3, 'wc_diff') # Get top 3 closest
-                
-                if not closest.empty:
-                    # Create comparison dataframe
-                    # Add user prediction
-                    user_row = pd.DataFrame([{
-                        'W/C Ratio': f"{wc:.2f} (Pred)", 
-                        'Dosage (%)': pred, 
-                        'Type': 'Predicted',
-                        'Silica Fume': f"{sf}%"
-                    }])
-                    
-                    # Add actual data points
-                    actual_rows = pd.DataFrame({
-                        'W/C Ratio': closest['wc_ratio'].apply(lambda x: f"{x:.2f} (Act)"),
-                        'Dosage (%)': closest['optimal_dosage'],
-                        'Type': 'Actual',
-                        'Silica Fume': closest['silica_fume'].apply(lambda x: f"{x}%")
-                    })
-                    
-                    comparison_df = pd.concat([user_row, actual_rows], ignore_index=True)
-                    
-                    # create tooltip data
-                    comparison_df['Tooltip'] = comparison_df.apply(lambda row: f"W/C: {row['W/C Ratio']}<br>SF: {row['Silica Fume']}<br>Dosage: {row['Dosage (%)']:.3f}%", axis=1)
+                comparison_df = pd.DataFrame({
+                    'Type': ['Predicted', 'Actual'],
+                    'Dosage (%)': [pred, actual_dosage]
+                })
 
-                    fig = px.bar(
-                        comparison_df,
-                        x='W/C Ratio',
-                        y='Dosage (%)',
-                        color='Type',
-                        title=f'{sp} Dosage Comparison (Closest Matches with ~{sf}% SF)',
-                        color_discrete_map={'Predicted': '#FF6B6B', 'Actual': '#4ECDC4'},
-                        hover_data={'Tooltip': True, 'W/C Ratio': False, 'Dosage (%)': False, 'Type': False}
-                    )
-                    
-                    fig.update_layout(yaxis_title="Optimal Dosage (%)", xaxis_title="W/C Ratio")
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("No sufficient data for comparison.")
+                fig = px.bar(
+                    comparison_df,
+                    x='Type',
+                    y='Dosage (%)',
+                    color='Type',
+                    title=f'{sp} Dosage Comparison (W/C {wc}, SF {sf}%)',
+                    color_discrete_map={'Predicted': '#FF6B6B', 'Actual': '#4ECDC4'},
+                    text='Dosage (%)'
+                )
+                
+                fig.update_traces(texttemplate='%{text:.3f}%', textposition='outside')
+                fig.update_layout(yaxis_title="Optimal Dosage (%)", showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Show Error
+                error = pred - actual_dosage
+                st.info(f"Difference (Pred - Act): **{error:+.4f}%**")
+            else:
+                st.info(f"ℹ️ No exact actual data point found for **W/C {wc:.2f}** and **Silica Fume {sf}%** in the historical dataset.")
         else:
             st.info("👈 Enter parameters and click 'Predict' to see results")
     
