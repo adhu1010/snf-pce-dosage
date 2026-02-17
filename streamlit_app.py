@@ -139,28 +139,63 @@ if models_loaded:
             # Show comparison with training data
             st.markdown("### 📈 Comparison with Training Data")
             
-            # Find closest actual values
+            # Filter by SP Type first
             actual_data = saturation_df[saturation_df['sp_type'] == sp].copy()
-            actual_data['wc_diff'] = abs(actual_data['wc_ratio'] - wc)
-            closest = actual_data.nsmallest(2, 'wc_diff')
             
-            if not closest.empty:
-                comparison_df = pd.DataFrame({
-                    'W/C Ratio': [wc] + closest['wc_ratio'].tolist(),
-                    'Dosage (%)': [pred] + closest['optimal_dosage'].tolist(),
-                    'Type': ['Predicted'] + ['Actual']*len(closest)
-                })
+            # Filter by Silica Fume (exact match or closest)
+            if not actual_data.empty:
+                # Try to find exact match for Silica Fume
+                sf_match = actual_data[actual_data['silica_fume'] == sf]
+                if not sf_match.empty:
+                    comparison_pool = sf_match
+                else:
+                    # If no exact SF match, find closest SF
+                    actual_data['sf_diff'] = abs(actual_data['silica_fume'] - sf)
+                    closest_sf = actual_data['sf_diff'].min()
+                    comparison_pool = actual_data[actual_data['sf_diff'] == closest_sf]
                 
-                fig = px.bar(
-                    comparison_df,
-                    x='W/C Ratio',
-                    y='Dosage (%)',
-                    color='Type',
-                    barmode='group',
-                    title=f'{sp} Dosage Comparison',
-                    color_discrete_map={'Predicted': '#FF6B6B', 'Actual': '#4ECDC4'}
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                # Now find closest W/C ratios from the filtered pool
+                comparison_pool = comparison_pool.copy()
+                comparison_pool['wc_diff'] = abs(comparison_pool['wc_ratio'] - wc)
+                closest = comparison_pool.nsmallest(3, 'wc_diff') # Get top 3 closest
+                
+                if not closest.empty:
+                    # Create comparison dataframe
+                    # Add user prediction
+                    user_row = pd.DataFrame([{
+                        'W/C Ratio': f"{wc:.2f} (Pred)", 
+                        'Dosage (%)': pred, 
+                        'Type': 'Predicted',
+                        'Silica Fume': f"{sf}%"
+                    }])
+                    
+                    # Add actual data points
+                    actual_rows = pd.DataFrame({
+                        'W/C Ratio': closest['wc_ratio'].apply(lambda x: f"{x:.2f} (Act)"),
+                        'Dosage (%)': closest['optimal_dosage'],
+                        'Type': 'Actual',
+                        'Silica Fume': closest['silica_fume'].apply(lambda x: f"{x}%")
+                    })
+                    
+                    comparison_df = pd.concat([user_row, actual_rows], ignore_index=True)
+                    
+                    # create tooltip data
+                    comparison_df['Tooltip'] = comparison_df.apply(lambda row: f"W/C: {row['W/C Ratio']}<br>SF: {row['Silica Fume']}<br>Dosage: {row['Dosage (%)']:.3f}%", axis=1)
+
+                    fig = px.bar(
+                        comparison_df,
+                        x='W/C Ratio',
+                        y='Dosage (%)',
+                        color='Type',
+                        title=f'{sp} Dosage Comparison (Closest Matches with ~{sf}% SF)',
+                        color_discrete_map={'Predicted': '#FF6B6B', 'Actual': '#4ECDC4'},
+                        hover_data={'Tooltip': True, 'W/C Ratio': False, 'Dosage (%)': False, 'Type': False}
+                    )
+                    
+                    fig.update_layout(yaxis_title="Optimal Dosage (%)", xaxis_title="W/C Ratio")
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No sufficient data for comparison.")
         else:
             st.info("👈 Enter parameters and click 'Predict' to see results")
     
