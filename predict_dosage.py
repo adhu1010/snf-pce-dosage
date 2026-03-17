@@ -6,6 +6,7 @@ Based on Marsh Cone Test Data
 Usage:
     python predict_dosage.py --wc 0.40 --sp PCE --sf 5
     python predict_dosage.py --wc 0.35 --sp SNF --sf 0
+    python predict_dosage.py --wc 0.42 --sp PCA --sf 10
 """
 
 import argparse
@@ -44,8 +45,8 @@ def predict_optimal_dosage(wc_ratio, sp_type, sf_pct, model, label_encoder):
     if sf_pct < 0 or sf_pct > 20:
         print("⚠️  Warning: Silica Fume % outside typical range (0-15%)")
     
-    if sp_type not in ['PCE', 'SNF']:
-        raise ValueError("Superplasticizer type must be 'PCE' or 'SNF'")
+    if sp_type not in ['PCE', 'SNF', 'PCA']:
+        raise ValueError("Superplasticizer type must be 'PCE', 'SNF', or 'PCA'")
     
     # Encode and predict
     # Feature order must match training: [wc_ratio, sp_type, silica_fume]
@@ -68,8 +69,8 @@ Examples:
     
     parser.add_argument('--wc', type=float, required=True,
                         help='Water-to-cement ratio (e.g., 0.35, 0.40, 0.45)')
-    parser.add_argument('--sp', type=str, required=True, choices=['PCE', 'SNF'],
-                        help='Superplasticizer type (PCE or SNF)')
+    parser.add_argument('--sp', type=str, required=True, choices=['PCE', 'SNF', 'PCA'],
+                        help='Superplasticizer type (PCE, SNF, or PCA)')
     parser.add_argument('--sf', type=float, default=0.0,
                         help='Silica Fume percentage (default: 0)')
     parser.add_argument('--verbose', action='store_true',

@@ -26,7 +26,8 @@ def process_data():
     # Files to process
     files = {
         'PCE': 'PCE.xlsx',
-        'SNF': 'SNF VALUES.xlsx'
+        'SNF': 'SNF VALUES.xlsx',
+        'PCA': 'PCA_MarshCone_Values.xlsx'
     }
     
     all_flow_data = []

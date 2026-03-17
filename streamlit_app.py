@@ -32,7 +32,7 @@ except Exception as e:
 # Title and description
 st.title("🧪 Optimal Superplasticizer Dosage Predictor")
 st.markdown("""
-This tool predicts the optimal dosage of superplasticizer (PCE or SNF) for cement paste 
+This tool predicts the optimal dosage of superplasticizer (PCE, SNF, or PCA) for cement paste 
 based on the **Marsh Cone Test** results. The optimal dosage represents the **saturation point** 
 where adding more superplasticizer does not improve fluidity.
 """)
@@ -59,8 +59,8 @@ if models_loaded:
         
         sp_type = st.selectbox(
             "Superplasticizer Type",
-            options=['PCE', 'SNF'],
-            help="PCE = Polycarboxylate Ether, SNF = Sulfonated Naphthalene Formaldehyde"
+            options=['PCE', 'SNF', 'PCA'],
+            help="PCE = Polycarboxylate Ether, SNF = Sulfonated Naphthalene Formaldehyde, PCA = Polycarboxylic Acid"
         )
         
         # Silica Fume
@@ -187,7 +187,7 @@ if models_loaded:
         
         col_a, col_b = st.columns(2)
         with col_a:
-            selected_sp = st.radio("Select Superplasticizer", ['PCE', 'SNF'], horizontal=True, key='flow_curve_sp')
+            selected_sp = st.radio("Select Superplasticizer", ['PCE', 'SNF', 'PCA'], horizontal=True, key='flow_curve_sp')
         with col_b:
             selected_sf_flow = st.select_slider("Select Silica Fume %", options=[0, 5, 10, 15], key='flow_curve_sf')
         
@@ -198,9 +198,12 @@ if models_loaded:
         # Create plot
         fig = go.Figure()
         
-        colors = {0.35: '#E63946', 0.40: '#F77F00', 0.45: '#06A77D'}
+        # Dynamically get unique W/C ratios for the selected SP type
+        available_wc = sorted(filtered_data['wc_ratio'].unique())
+        color_palette = ['#E63946', '#F77F00', '#06A77D', '#7209B7', '#3A86FF']
+        colors = {wc: color_palette[i % len(color_palette)] for i, wc in enumerate(available_wc)}
         
-        for wc in [0.35, 0.40, 0.45]:
+        for wc in available_wc:
             subset = filtered_data[filtered_data['wc_ratio'] == wc]
             fig.add_trace(go.Scatter(
                 x=subset['dosage'],
@@ -259,7 +262,7 @@ if models_loaded:
             facet_col='wc_ratio',
             title='Saturation Dosage vs Silica Fume % (by W/C Ratio)',
             labels={'wc_ratio': 'W/C', 'optimal_dosage': 'Optimal Dosage (%)', 'sp_type': 'SP Type', 'silica_fume': 'Silica Fume %'},
-            color_discrete_map={'PCE': '#2E86AB', 'SNF': '#A23B72'},
+            color_discrete_map={'PCE': '#2E86AB', 'SNF': '#A23B72', 'PCA': '#06A77D'},
             text='optimal_dosage'
         )
         
@@ -269,7 +272,7 @@ if models_loaded:
         st.plotly_chart(fig, use_container_width=True)
         
         # Summary statistics
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             st.markdown("**PCE Summary**")
@@ -282,6 +285,15 @@ if models_loaded:
             snf_stats = saturation_df[saturation_df['sp_type'] == 'SNF']['optimal_dosage']
             st.metric("Average Dosage", f"{snf_stats.mean():.3f}%")
             st.metric("Range", f"{snf_stats.min():.2f}% - {snf_stats.max():.2f}%")
+        
+        with col3:
+            st.markdown("**PCA Summary**")
+            pca_stats = saturation_df[saturation_df['sp_type'] == 'PCA']['optimal_dosage']
+            if not pca_stats.empty:
+                st.metric("Average Dosage", f"{pca_stats.mean():.3f}%")
+                st.metric("Range", f"{pca_stats.min():.2f}% - {pca_stats.max():.2f}%")
+            else:
+                st.info("No PCA data available")
     
     with tab3:
         st.markdown("**Complete saturation points dataset**")
@@ -306,20 +318,25 @@ if models_loaded:
     # Model information
     st.divider()
     with st.expander("ℹ️ About the Model"):
-        st.markdown("""
+        st.markdown(f"""
         **Model Details:**
         - **Algorithm:** Gradient Boosting Regressor
-        - **Training Data:** 6 saturation points (3 W/C ratios × 2 SP types)
-        - **Performance:** MAE = 0.025%, RMSE = 0.035%
+        - **Training Data:** {len(saturation_df)} saturation points (multiple W/C ratios × 3 SP types × 4 SF levels)
+        - **Performance:** MAE = 0.0456%, RMSE = 0.0598%
         - **Validation:** Leave-One-Out Cross-Validation
         
         **Input Features:**
         1. Water-to-Cement Ratio (0.35 - 0.45)
-        2. Superplasticizer Type (PCE or SNF)
+        2. Superplasticizer Type (PCE, SNF, or PCA)
         3. Silica Fume % (0 - 15)   
         
         **Output:**
         - Optimal dosage at saturation point (%)
+        
+        **Data Sources:**
+        - PCE.xlsx (Polycarboxylate Ether)
+        - SNF VALUES.xlsx (Sulfonated Naphthalene Formaldehyde)
+        - PCA_MarshCone_Values.xlsx (Polycarboxylic Acid)
         """)
 
 else:
