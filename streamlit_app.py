@@ -32,7 +32,7 @@ except Exception as e:
 # Title and description
 st.title("🧪 Optimal Superplasticizer Dosage Predictor")
 st.markdown("""
-This tool predicts the optimal dosage of superplasticizer (PCE, SNF, or PCA) for cement paste 
+This tool predicts the optimal dosage of superplasticizer (SNF or PCA) for cement paste 
 based on the **Marsh Cone Test** results. The optimal dosage represents the **saturation point** 
 where adding more superplasticizer does not improve fluidity.
 """)
@@ -59,8 +59,8 @@ if models_loaded:
         
         sp_type = st.selectbox(
             "Superplasticizer Type",
-            options=['PCE', 'SNF', 'PCA'],
-            help="PCE = Polycarboxylate Ether, SNF = Sulfonated Naphthalene Formaldehyde, PCA = Polycarboxylic Acid"
+            options=['SNF', 'PCA'],
+            help="SNF = Sulfonated Naphthalene Formaldehyde, PCA = Polycarboxylic Acid"
         )
         
         # Silica Fume
@@ -187,7 +187,7 @@ if models_loaded:
         
         col_a, col_b = st.columns(2)
         with col_a:
-            selected_sp = st.radio("Select Superplasticizer", ['PCE', 'SNF', 'PCA'], horizontal=True, key='flow_curve_sp')
+            selected_sp = st.radio("Select Superplasticizer", ['SNF', 'PCA'], horizontal=True, key='flow_curve_sp')
         with col_b:
             selected_sf_flow = st.select_slider("Select Silica Fume %", options=[0, 5, 10, 15], key='flow_curve_sf')
         
@@ -262,7 +262,7 @@ if models_loaded:
             facet_col='wc_ratio',
             title='Saturation Dosage vs Silica Fume % (by W/C Ratio)',
             labels={'wc_ratio': 'W/C', 'optimal_dosage': 'Optimal Dosage (%)', 'sp_type': 'SP Type', 'silica_fume': 'Silica Fume %'},
-            color_discrete_map={'PCE': '#2E86AB', 'SNF': '#A23B72', 'PCA': '#06A77D'},
+            color_discrete_map={'SNF': '#A23B72', 'PCA': '#06A77D'},
             text='optimal_dosage'
         )
         
@@ -272,21 +272,15 @@ if models_loaded:
         st.plotly_chart(fig, use_container_width=True)
         
         # Summary statistics
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("**PCE Summary**")
-            pce_stats = saturation_df[saturation_df['sp_type'] == 'PCE']['optimal_dosage']
-            st.metric("Average Dosage", f"{pce_stats.mean():.3f}%")
-            st.metric("Range", f"{pce_stats.min():.2f}% - {pce_stats.max():.2f}%")
-        
-        with col2:
             st.markdown("**SNF Summary**")
             snf_stats = saturation_df[saturation_df['sp_type'] == 'SNF']['optimal_dosage']
             st.metric("Average Dosage", f"{snf_stats.mean():.3f}%")
             st.metric("Range", f"{snf_stats.min():.2f}% - {snf_stats.max():.2f}%")
         
-        with col3:
+        with col2:
             st.markdown("**PCA Summary**")
             pca_stats = saturation_df[saturation_df['sp_type'] == 'PCA']['optimal_dosage']
             if not pca_stats.empty:
@@ -321,22 +315,20 @@ if models_loaded:
         st.markdown(f"""
         **Model Details:**
         - **Algorithm:** Gradient Boosting Regressor
-        - **Training Data:** {len(saturation_df)} saturation points (multiple W/C ratios × 3 SP types × 4 SF levels)
-        - **Performance:** MAE = 0.0456%, RMSE = 0.0598%
+        - **Training Data:** {len(saturation_df)} saturation points (multiple W/C ratios × 2 SP types × 4 SF levels)
         - **Validation:** Leave-One-Out Cross-Validation
         
         **Input Features:**
         1. Water-to-Cement Ratio (0.35 - 0.45)
-        2. Superplasticizer Type (PCE, SNF, or PCA)
+        2. Superplasticizer Type (SNF or PCA)
         3. Silica Fume % (0 - 15)   
         
         **Output:**
         - Optimal dosage at saturation point (%)
         
         **Data Sources:**
-        - PCE.xlsx (Polycarboxylate Ether)
         - SNF VALUES.xlsx (Sulfonated Naphthalene Formaldehyde)
-        - PCA_MarshCone_Values.xlsx (Polycarboxylic Acid)
+        - pca final (2).xlsx (Polycarboxylic Acid - New Experimental Values)
         """)
 
 else:

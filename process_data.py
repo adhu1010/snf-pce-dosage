@@ -23,11 +23,10 @@ def extract_silica_fume_pct(sheet_name):
 def process_data():
     print("🔄 Processing data files with Silica Fume integration...")
     
-    # Files to process
+    # Files to process (PCE removed, PCA updated with new experimental values)
     files = {
-        'PCE': 'PCE.xlsx',
         'SNF': 'SNF VALUES.xlsx',
-        'PCA': 'PCA_MarshCone_Values.xlsx'
+        'PCA': 'pca final (2).xlsx'
     }
     
     all_flow_data = []
