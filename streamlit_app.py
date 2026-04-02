@@ -290,24 +290,98 @@ if models_loaded:
                 st.info("No PCA data available")
     
     with tab3:
-        st.markdown("**Complete saturation points dataset**")
-        st.dataframe(
-            saturation_df.style.format({
-                'wc_ratio': '{:.2f}',
-                'optimal_dosage': '{:.3f}',
-                'min_flow_time': '{:.1f}'
-            }),
-            use_container_width=True
-        )
+        data_tab1, data_tab2 = st.tabs(["📌 Saturation Points", "📋 Marsh Cone Flow Data"])
         
-        # Download button
-        csv = saturation_df.to_csv(index=False)
-        st.download_button(
-            label="📥 Download Data (CSV)",
-            data=csv,
-            file_name="saturation_points.csv",
-            mime="text/csv"
-        )
+        with data_tab1:
+            st.markdown("**Saturation points extracted from Marsh Cone experiments**")
+            
+            # Filters
+            dt_col1, dt_col2 = st.columns(2)
+            with dt_col1:
+                dt_sp_filter = st.multiselect(
+                    "Filter by SP Type", 
+                    options=saturation_df['sp_type'].unique().tolist(),
+                    default=saturation_df['sp_type'].unique().tolist(),
+                    key='dt_sp_sat'
+                )
+            with dt_col2:
+                dt_sf_filter = st.multiselect(
+                    "Filter by Silica Fume %",
+                    options=sorted(saturation_df['silica_fume'].unique().tolist()),
+                    default=sorted(saturation_df['silica_fume'].unique().tolist()),
+                    key='dt_sf_sat'
+                )
+            
+            filtered_sat = saturation_df[
+                (saturation_df['sp_type'].isin(dt_sp_filter)) &
+                (saturation_df['silica_fume'].isin(dt_sf_filter))
+            ]
+            
+            st.dataframe(
+                filtered_sat.style.format({
+                    'wc_ratio': '{:.2f}',
+                    'optimal_dosage': '{:.3f}',
+                    'min_flow_time': '{:.1f}'
+                }),
+                use_container_width=True
+            )
+            
+            st.caption(f"Showing {len(filtered_sat)} of {len(saturation_df)} saturation points")
+            
+            csv_sat = filtered_sat.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Saturation Points (CSV)",
+                data=csv_sat,
+                file_name="saturation_points.csv",
+                mime="text/csv",
+                key='dl_sat'
+            )
+        
+        with data_tab2:
+            st.markdown("**Raw Marsh Cone test flow data (from MARSHCONE.xlsx & PCA_MarshCone_Values.xlsx)**")
+            
+            # Filters
+            fl_col1, fl_col2 = st.columns(2)
+            with fl_col1:
+                fl_sp_filter = st.multiselect(
+                    "Filter by SP Type",
+                    options=flow_df['sp_type'].unique().tolist(),
+                    default=flow_df['sp_type'].unique().tolist(),
+                    key='dt_sp_flow'
+                )
+            with fl_col2:
+                fl_sf_filter = st.multiselect(
+                    "Filter by Silica Fume %",
+                    options=sorted(flow_df['silica_fume'].unique().tolist()),
+                    default=sorted(flow_df['silica_fume'].unique().tolist()),
+                    key='dt_sf_flow'
+                )
+            
+            filtered_flow = flow_df[
+                (flow_df['sp_type'].isin(fl_sp_filter)) &
+                (flow_df['silica_fume'].isin(fl_sf_filter))
+            ]
+            
+            st.dataframe(
+                filtered_flow.style.format({
+                    'wc_ratio': '{:.2f}',
+                    'dosage': '{:.3f}',
+                    'flow_time': '{:.1f}'
+                }),
+                use_container_width=True,
+                height=400
+            )
+            
+            st.caption(f"Showing {len(filtered_flow)} of {len(flow_df)} data points")
+            
+            csv_flow = filtered_flow.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Flow Data (CSV)",
+                data=csv_flow,
+                file_name="processed_flow_data.csv",
+                mime="text/csv",
+                key='dl_flow'
+            )
 
     # Model information
     st.divider()
