@@ -49,12 +49,12 @@ if models_loaded:
         # User inputs
         wc_ratio = st.number_input(
             "Water-to-Cement Ratio (W/C)",
-            min_value=0.30,
+            min_value=0.35,
             max_value=0.50,
             value=0.40,
             step=0.01,
             format="%.2f",
-            help="Typical range: 0.35 - 0.45 for high-strength concrete"
+            help="Experiment range: 0.40, 0.42, 0.45"
         )
         
         sp_type = st.selectbox(
@@ -389,11 +389,11 @@ if models_loaded:
         st.markdown(f"""
         **Model Details:**
         - **Algorithm:** Gradient Boosting Regressor
-        - **Training Data:** {len(saturation_df)} saturation points (multiple W/C ratios × 2 SP types × 4 SF levels)
+        - **Training Data:** {len(saturation_df)} saturation points (3 W/C ratios × 2 SP types × 4 SF levels)
         - **Validation:** Leave-One-Out Cross-Validation
         
         **Input Features:**
-        1. Water-to-Cement Ratio (0.35 - 0.45)
+        1. Water-to-Cement Ratio (0.40, 0.42, 0.45)
         2. Superplasticizer Type (SNF or PCA)
         3. Silica Fume % (0 - 15)   
         
