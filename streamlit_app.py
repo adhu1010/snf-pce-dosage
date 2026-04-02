@@ -327,8 +327,8 @@ if models_loaded:
         - Optimal dosage at saturation point (%)
         
         **Data Sources:**
-        - SNF VALUES.xlsx (Sulfonated Naphthalene Formaldehyde)
-        - pca final (2).xlsx (Polycarboxylic Acid - New Experimental Values)
+        - MARSHCONE.xlsx (SNF - Sulfonated Naphthalene Formaldehyde Marsh Cone Values)
+        - PCA_MarshCone_Values.xlsx (PCA - Polycarboxylic Acid Marsh Cone Values)
         """)
 
 else:
